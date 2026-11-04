@@ -5,6 +5,8 @@
 #include <cstring>
 #include <vector>
 #include <functional>
+#include <chrono>
+#include <omp.h>
 
 using namespace std;
 
@@ -144,13 +146,13 @@ int voteFuntion(Data* neighbours) {
 int main() {
     Data* data = new Data[70000];
     readDataFromFile("mnist_784.arff", data);
-
+    
     Data* training_set = new Data[train_size];
     Data* test_set = new Data[test_size];
-
+    
     copy_n(data, train_size, training_set);
     copy_n(&data[train_size], test_size, test_set);
-
+    
     for (int i = 0; i < 10; ++i) {
         cout << "Class: " << data[i].classNo << ", Pixels: ";
         for (int j = 0; j < 784; ++j) {
@@ -158,11 +160,16 @@ int main() {
         }
         cout << endl;
     }
-
+    
     cout << endl;
-
+    
     int correct = 0;
-    for (int i = 0; i < 10000; i++) {
+
+    auto start = chrono::high_resolution_clock::now();
+
+    double startOMP = omp_get_wtime();
+
+    for (int i = 0; i < 100; i++) {
         Data* neighbours = getNeighbours(training_set, test_set[i], cosineDistance);
         /*
         for (int j = 0; j < k; ++j) {
@@ -180,6 +187,14 @@ int main() {
     cout << "Accuracy: " << (double)correct / test_size * 100 << "%" << endl;
 
     delete[] data;
+
+    auto end = chrono::high_resolution_clock::now();
+    double endOMP = omp_get_wtime();
+
+    chrono::duration<double> duration = end - start;
+    
+    cout << "Execution time: " << duration.count()<< "s" << endl;
+    cout << "Execution time (OMP): " << endOMP - startOMP << "s" << endl;
 
     return 0;
 }
