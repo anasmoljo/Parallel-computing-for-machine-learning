@@ -1,5 +1,5 @@
 # Parallel-computing-for-machine-learning
-Midterm Assignement
+Midterm Assignment
 
 AnaSmoljo_FranPilica
 
