@@ -8,7 +8,7 @@
 
 using namespace std;
 
-#define k 10000
+#define k 1
 #define number_of_pixels 784
 #define train_size 60000
 #define test_size 10000
@@ -78,21 +78,44 @@ double cosineDistance(int* a, int* b, int size) {
     return 1.0 - (dot_product / (sqrt(norm_a) * sqrt(norm_b)));
 }
 
-Data* getNeighbours(Data* training_set, Data test_instance, DistanceFunction distanceFunction = euclidianDistance) {
-    vector<pair<Data, double>> neighbourDistances;
+Data* getNeighbours(Data* training_set, Data test_instance, const DistanceFunction& distanceFunction = euclidianDistance) {
+    pair<Data, double> neighbourDistances[k];
 
-    for (int i = 0; i < train_size; i++) {
-        neighbourDistances.push_back(make_pair(training_set[i], distanceFunction(test_instance.pixelArray, training_set[i].pixelArray, number_of_pixels)));
+    double largestDistance = 0.0;
+    for (int i = 0; i < k; i++) {
+        neighbourDistances[i] = make_pair(training_set[i],
+            distanceFunction(test_instance.pixelArray, training_set[i].pixelArray, number_of_pixels));
+        if (neighbourDistances[i].second > largestDistance) {
+            largestDistance = neighbourDistances[i].second;
+        }
     }
 
-    sort(neighbourDistances.begin(), neighbourDistances.end(), [](const pair<Data, double>& a, const pair<Data, double>& b) {
-        return a.second < b.second;
-    });
+    for (int i = k; i < train_size; i++) {
+        double distance = distanceFunction(test_instance.pixelArray, training_set[i].pixelArray, number_of_pixels);
+
+        if (distance > largestDistance) {
+            continue;
+        }
+
+        for (int j = 0; j < k; j++) {
+            if (neighbourDistances[j].second == largestDistance) {
+                neighbourDistances[j] = make_pair(training_set[i], distance);
+                largestDistance = 0;
+                break;
+            }
+        }
+
+        for (int j = 0; j < k; j++) {
+            if (neighbourDistances[j].second > largestDistance) {
+                largestDistance = neighbourDistances[j].second;
+                break;
+            }
+        }
+    }
 
     Data* neighbours = new Data[k];
     for (int i = 0; i < k; i++) {
         neighbours[i] = neighbourDistances[i].first;
-        cout << "Distance: " << neighbourDistances[i].second << endl;
     }
 
     return neighbours;
@@ -138,14 +161,23 @@ int main() {
 
     cout << endl;
 
-    for (int i = 0; i < 3; i++) {
+    int correct = 0;
+    for (int i = 0; i < 10000; i++) {
         Data* neighbours = getNeighbours(training_set, test_set[i], cosineDistance);
+        /*
         for (int j = 0; j < k; ++j) {
             cout << "Class: " << neighbours[j].classNo << " is neighbourd to " << test_set[i].classNo;
             cout << endl;
         }
         cout << "Predicted class: " << voteFuntion(neighbours) << endl;
+        */
+        if (voteFuntion(neighbours) == test_set[i].classNo) {
+            correct++;
+        }
     }
+
+    cout << "Correct predictions: " << correct << " out of " << test_size << endl;
+    cout << "Accuracy: " << (double)correct / test_size * 100 << "%" << endl;
 
     delete[] data;
 
