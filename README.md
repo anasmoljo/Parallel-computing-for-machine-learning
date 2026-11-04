@@ -1,0 +1,2 @@
+# Parallel-computing-for-machine-learning
+Mid-termAssignement_AnaSmoljo_FranPilica_kNNClassifier
